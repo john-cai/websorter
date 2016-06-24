@@ -2,9 +2,12 @@ package sorter
 
 import (
 	"bytes"
+	"encoding/json"
 	//	"fmt"
+	"io/ioutil"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"net/http"
@@ -154,6 +157,58 @@ func TestSortArrayBadContentType(t *testing.T) {
 		SortArray(w, r)
 		if w.Code != test.Expected {
 			t.Errorf("expected %d, got %d", test.Expected, w.Code)
+		}
+	}
+}
+func TestSortArray(t *testing.T) {
+	tests := []struct {
+		Words          []string
+		ExpectedCode   int
+		ExpectedResult string
+		Reverse        bool
+	}{
+		{
+			Words:          []string{"cats", "dogs", "turtles"},
+			Reverse:        false,
+			ExpectedCode:   http.StatusOK,
+			ExpectedResult: `{"result":["cats","dogs","turtles"],"reverse":false}`,
+		},
+		{
+			Words:          []string{"9", "dogs", "turtles"},
+			Reverse:        false,
+			ExpectedCode:   http.StatusBadRequest,
+			ExpectedResult: `words must match [A-Za-z]`,
+		},
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(SortArray))
+
+	for _, test := range tests {
+		p, _ := json.Marshal(&payload{
+			Words:   test.Words,
+			Result:  nil,
+			Reverse: test.Reverse,
+		})
+		b := bytes.NewBuffer(nil)
+		b.Write(p)
+		resp, err := http.Post(ts.URL, "application/json", b)
+		if err != nil {
+			t.Fatalf("%s", err.Error())
+		}
+		actualResponse, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("%s", err.Error())
+		}
+		if resp.StatusCode != test.ExpectedCode {
+			t.Errorf("expected response code %d, got %d", test.ExpectedCode, resp.StatusCode)
+		}
+
+		if strings.TrimSpace(string(actualResponse)) != test.ExpectedResult {
+			t.Errorf("expected response %s, got %s", test.ExpectedResult, string(actualResponse))
+		}
+
+		if resp.Header.Get("Content-Type") != "application/json" {
+			t.Errorf("expected content type of response to be application/json, got %s", resp.Header.Get("Content-Type"))
 		}
 	}
 }

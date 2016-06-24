@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strings"
+
 )
 
 var validWord = regexp.MustCompile(`^[A-Za-z]+$`)
@@ -17,13 +19,14 @@ type payload struct {
 
 func SortArray(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
 	// check HTTP verb is POST
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 	// check content type
-	if r.Header.Get("Content-Type") != "application/json" {
+	if !strings.Contains(r.Header.Get("Content-Type"),"application/json") {
 		w.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
@@ -54,7 +57,6 @@ func SortArray(w http.ResponseWriter, r *http.Request) {
 	p.Words = nil
 	p.Result = sortableWords.words
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(p)
 
