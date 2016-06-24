@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-var validChar = regexp.MustCompile(`^[A-Za-z]+$`)
+var validWord = regexp.MustCompile(`^[A-Za-z]+$`)
 
 type payload struct {
 	Words   []string `json:"words,omitempty"`
@@ -63,7 +63,7 @@ func sortArray(w http.ResponseWriter, r *http.Request) {
 
 func validWords(s []string) bool {
 	for _, w := range s {
-		if !validChar.MatchString(w) {
+		if !validWord.MatchString(w) {
 			return false
 		}
 	}
